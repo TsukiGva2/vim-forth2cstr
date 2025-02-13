@@ -152,19 +152,19 @@ VARIABLE aST
 
 \ Calling Words
 
-: make-call		( word-addr target-addr -- ; )
+: prepare-call		( word-addr target-addr -- ; this function is specific to the [encode-]call! functions )
 	>R			( word-addr        target-addr ; puts target-addr in a pokeball )
 	$C000 OR		( word-addr        call-opcode ; creates a call instruction, C000 | Address )
 	R>			( call-instruction             ; goes like "target-addr, i choose you!" )
 ;
 
 : encode-call!  	( word-addr target-addr -- ; useful in code modifying words, encode a literal call instruction )
-	make-call		( word-addr        target-addr ; )
+	prepare-call		( word-addr        target-addr ; )
 	16-bit-encode!		( call-instruction target-addr ; encodes the created call instruction as a value to target-addr )
 ;
 
 : call!			( word-addr target-addr -- ; writes a call instruction in target-addr )
-	make-call		( word-addr        target-addr ; )
+	prepare-call		( word-addr        target-addr ; )
 	!			( call-instruction target-addr ; writes the created call instruction, modifying target-addr )
 ;
 

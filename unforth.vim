@@ -3,6 +3,11 @@ func! Remove(string)
 	silent! exe '%substitute/' . a:string . '//g'
 endf
 
+func! RemoveInline(string)
+
+	silent! exe 'substitute/' . a:string . '//g'
+endf
+
 func! AbbrevPrimitives()
 
  	" substitution table
@@ -37,8 +42,8 @@ func! Mangle(word_def, prefix)
 
 	let g:varnames_used = g:varnames_used . l:generated_name . ';'
 
-	" exe 'g/'    . l:word_call . '/normal! 0O//' . a:word_def
-	exe '%sub/' . l:word_call . '/' . l:generated_name  . '/g'
+	exe '%sub/'   . l:word_call . '/' . l:generated_name . '/g'
+	exe 'normal!' . 'Go//'            . l:generated_name . '	->	' . a:word_def
 endf
 
 func! MangleWord() " this function must be called only on lines with a forth word definition
@@ -59,10 +64,17 @@ func! MangleVar()
 	cal Mangle(l:var_def, 'v')
 endf
 
-func! Forth()
+func! Forth() abort
+
+	let l:file_name = substitute(expand('%:t'), '\..*', '', 'g')
+
+	" save to new file
+	execute 'saveas!' l:file_name . ".h"
+
+	set ft=none
 
 	" My shorthands:
-	
+
 	" 3-byte tagged buffer
 	silent! %s/#3/TAG NOP NOP/
 
@@ -103,29 +115,30 @@ func! Forth()
 	silent! %s/\<SPACE\>/ 6 6 API /g
 	silent! %s/\<COLON\>/ 8 6 API /g  
 
+	" 'g;^\s*[^/];...': execute ... in uncommented lines
+
 	" remove everything after 3 letters of each word
-	cal Remove('\<[A-Za-z\-!@?]\{1,3\}\zs[A-Za-z\-!@?]*\>')
+	g;^\s*[^/];cal RemoveInline('\<[A-Za-z\-!@?]\{1,3\}\zs[A-Za-z\-!@?]*\>')
 
 	" quote everything
-	%normal! I"
-	%normal! A" NL
+	g;^\s*[^/];normal! A" NL
+	g;^\s*[^/];normal! I"
 
  	" write code variable
 	normal! gg0O#define NL "\n"
 	normal! gg0Oconst char code[] PROGMEM =
 
 	" write guards
-	exe 'normal!' 'gg0O#define __' . expand('%') . '_FTH__'
-	exe 'normal!' 'gg0O#ifndef __' . expand('%') . '_FTH__'
+	let l:guard = '__' . l:file_name . '_FTH__'
+	
+	exe 'normal!' 'gg0O#define ' . l:guard
+	exe 'normal!' 'gg0O#ifndef ' . l:guard
 
 	" close variable/guard
 	normal! G0o;
 	normal! G0o#endif
 
-	" save to new file
-	execute 'w!' expand('%') . ".h"
-
-	" restore original
-	undo
+	set ft=c
+	w
 endf
 
