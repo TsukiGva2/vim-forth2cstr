@@ -118,7 +118,7 @@ func! Unforth(outfile) abort
 	" 'g;^\s*[^/];...': execute ... in uncommented lines
 
 	" remove everything after 3 letters of each word
-	g;^\s*[^/];cal RemoveInline('\<[A-Za-z\-!@?]\{1,3\}\zs[A-Za-z\-!@?]*\>')
+	g;^\s*[^/];cal RemoveInline('\<[A-Za-z\-!@?*]\{1,3\}\zs[A-Za-z\-!@?*]*\>')
 
 	" quote everything
 	g;^\s*[^/];normal! A" NL

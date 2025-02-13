@@ -21,44 +21,12 @@
 \ #4  -> TAG NOP NOP NOP, 4-byte tagged   buffer, this is usually a placeholder for code, allowing 2 calls;
 \ #_4 -> NOP NOP NOP NOP, 4-byte untagged buffer, this is usually a placeholder for raw data.
 
+\ functions tagged with an asterisk(*) need to be double checked for duplicate names, consider only the first 3 chars!!
+\ they are also EXTERNAL, DO NOT CALL THEM IN THIS SOURCE CODE!
+
 \ ======================
 
 501 VALUE VERSION
-
-\ User interaction-related words and state
-
-6   VALUE mIN
-7   VALUE aIN
-
-VARIABLE Scr
-VARIABLE mRL
-VARIABLE Mac
-VARIABLE mST
-VARIABLE Aac
-VARIABLE aST
-
-: MainPressed?
-	mIN IN 0 =
-;
-
-: AltPressed?
-	aIN IN 0 =
-;
-
-: Button?
-	DUP ROT SWAP
-	NOT AND
-;
-
-: ScreenNext
-	IF
-		Scr @ 1 +
-		7 MOD
-		Scr !
-	THEN
-;
-
-\ ======================
 
 \ C-API Drawing instructions
 
@@ -163,7 +131,7 @@ VARIABLE aST
 	16-bit-encode!		( call-instruction target-addr ; encodes the created call instruction as a value to target-addr )
 ;
 
-: call!			( word-addr target-addr -- ; writes a call instruction in target-addr )
+: call! 		( word-addr target-addr -- ; writes a call instruction in target-addr )
 	prepare-call		( word-addr        target-addr ; )
 	!			( call-instruction target-addr ; writes the created call instruction, modifying target-addr )
 ;
@@ -172,16 +140,53 @@ VARIABLE aST
 
 \ Screen-specific words
 
-: Antenna!  		( m1 v1 m2 v2 m3 v3 m4 v4 -- ; magnitude and value for each antenna )
-	3 aligned-data-Big!	( m1 v1 m2 v2 m3 v3 m4 v4 idx align )
-	2 aligned-data-Big!	( m1 v1 m2 v2 m3 v3       idx align )
-	1 aligned-data-Big!	( m1 v1 m2 v2             idx align )
-	0 aligned-data-Big!	( m1 v1                   idx align )
+: Antenna!   		( m1 v1 m2 v2 m3 v3 m4 v4 -- ; magnitude and value for each antenna )
+	0 aligned-data-Big!	( m1 v1 m2 v2 m3 v3 m4 v4 idx )
+	1 aligned-data-Big!	( m1 v1 m2 v2 m3 v3       idx )
+	2 aligned-data-Big!	( m1 v1 m2 v2             idx )
+	3 aligned-data-Big!	( m1 v1                   idx )
 ;
 
 \ Example:
-\	3 50 3 50 3 50 3 50 Antenna!
-\	' antenna 1-CODE call!
+\       3 50 1 500 1 650 3 5 Antenna!
+\       ' antenna 1-CODE call!
+
+\ $01 0 1 aligned-data-C!
+\ ' Label 1-CODE call!
+
+\ ======================
+
+\ User interaction-related words and state
+
+VARIABLE current-screen
+
+6 VALUE arrow-pin
+7 VALUE confirm-pin
+
+: arrow-pressed?
+	arrow-pin IN 0 =
+;
+
+: confirm-pressed?
+	confirm-pin IN 0 =
+;
+
+: next-screen
+	IF
+		current-screen @
+		1 + 7 MOD
+		current-screen !
+	THEN
+; 
+ 
+\ ====================== 
+
+\ Extern function signatures in alphabetical order
+\ ___
+: Atn* Antenna!          ; ( I8 I16 I8 I16 I8 I16 I8 I16 ; extern )
+: ad!* aligned-data!     ; ( I16      idx align          ; extern )
+: adB* aligned-data-Big! ; ( I8 I16   idx                ; extern )
+: adC* aligned-data-C!   ; ( I8       idx align          ; extern )
 
 \ ======================
 
