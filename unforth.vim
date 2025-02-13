@@ -19,19 +19,64 @@ func! AbbrevPrimitives()
 	silent! %s/OVER/OVR/g    
 endf
 
-func! Mangle() " this function must be called only on lines with a forth word definition
+let g:varnames_used = ""
+
+func! Mangle(word_def, prefix)
+
+	" pattern for calls to that word
+	let l:word_call = '\<' . a:word_def . '\>'
+
+	" new name
+	let l:generated_name = a:prefix . (rand() % 100)
+
+	while g:varnames_used =~ l:generated_name
+		echo "Detected duplicate name, randomizing"
+
+		let l:generated_name = a:prefix . (rand() % 100)
+	endw
+
+	let g:varnames_used = g:varnames_used . l:generated_name . ';'
+
+	" exe 'g/'    . l:word_call . '/normal! 0O//' . a:word_def
+	exe '%sub/' . l:word_call . '/' . l:generated_name  . '/g'
+endf
+
+func! MangleWord() " this function must be called only on lines with a forth word definition
 
 	" get the defined word
-	let l:str = matchstr(getline('.'), '[0-9A-Za-z\-!@?]\+')
-	exe '%s/' . l:str . '/f' . (rand() % 100) . '/g'
+	let l:word_def = matchstr(getline('.'), '[0-9A-Za-z\-!@?]\+')
+
+	" mangle it
+	cal Mangle(l:word_def, 'w')
+endf
+
+func! MangleVar()
+
+	" get the defined word
+	let l:var_def = matchstr(getline('.'), '\(VARIABLE\|VALUE\)\s\+\zs[0-9A-Za-z\-!@?]\+')
+
+	" mangle it
+	cal Mangle(l:var_def, 'v')
 endf
 
 func! Forth()
 
-	g/: \zs[A-Za-z\-!@?]\+\ze/cal Mangle()
+	" My shorthands:
+	
+	" 3-byte tagged buffer
+	silent! %s/#3/TAG NOP NOP/
 
-	" remove prefixes like 'aligned' 'int16' 16-bit
-	cal Remove('\<\(aligned\|int..\|..-bit\)-')
+	" 4-byte tagged buffer
+	silent! %s/#4/TAG NOP NOP NOP/
+
+	" 4-byte untagged buffer
+	silent! %s/#_4/NOP NOP NOP NOP/
+
+	" actual forth stuff
+
+	" Mangle word names to avoid conflicts
+	g/^:/cal MangleWord()
+	g/VARIABLE\|VALUE/cal MangleVar()
 
 	" remove quotes
 	cal Remove('"')
@@ -57,9 +102,6 @@ func! Forth()
 	silent! %s/\<A\>/ 7 6 API /g
 	silent! %s/\<SPACE\>/ 6 6 API /g
 	silent! %s/\<COLON\>/ 8 6 API /g  
-
-	" remove number prefixes
-	cal Remove('\<[0-9][A-Za-z\-!@?]\{1,2\}\zs[A-Za-z\-!@?]*\>')
 
 	" remove everything after 3 letters of each word
 	cal Remove('\<[A-Za-z\-!@?]\{1,3\}\zs[A-Za-z\-!@?]*\>')
