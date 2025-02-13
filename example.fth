@@ -26,18 +26,16 @@
 
 \ ======================
 
-501 VALUE VERSION
-
 \ C-API Drawing instructions
 
-: Label    5   API ;
+\ offset +0x00
+: Label    5   API ; ( 2 bytes each )
 : Forward  2   API ;
 : BigNum   1   API ; ( ; biblically accurate dump of 65K in BigNumber format: 0xBF004103 )
 : Number   4   API ;
 : Value    6   API ;
 : Ip       7   API ;
 : Ms       3   API ;
-
 : antenna
 	A 1 Number COLON BigNum SPACE
 	A 2 Number COLON BigNum Forward
@@ -46,6 +44,8 @@
 ;
 
 \ ======================
+
+501 VALUE VERSION
 
 \ The screen
 
