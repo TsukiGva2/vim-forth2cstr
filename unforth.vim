@@ -43,7 +43,7 @@ func! Mangle(word_def, prefix)
 	let g:varnames_used = g:varnames_used . l:generated_name . ';'
 
 	exe '%sub/'   . l:word_call . '/' . l:generated_name . '/g'
-	exe 'normal!' . 'Go//'            . l:generated_name . '	->	' . a:word_def
+	exe 'normal!' . 'ggO//'           . l:generated_name . '	->	' . a:word_def
 endf
 
 func! MangleWord() " this function must be called only on lines with a forth word definition
@@ -64,12 +64,12 @@ func! MangleVar()
 	cal Mangle(l:var_def, 'v')
 endf
 
-func! Forth() abort
+func! Unforth(outfile) abort
 
 	let l:file_name = substitute(expand('%:t'), '\..*', '', 'g')
 
 	" save to new file
-	execute 'saveas!' l:file_name . ".h"
+	execute 'saveas!' a:outfile
 
 	set ft=none
 
@@ -141,4 +141,6 @@ func! Forth() abort
 	set ft=c
 	w
 endf
+
+command! -nargs=1 Unforth cal Unforth(<q-args>)
 
