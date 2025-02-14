@@ -33,6 +33,12 @@ let g:varnames_used = ""
 
 func! Mangle(word_def, prefix)
 
+	" return if word_def is empty, this happens in marked VAL/VARs
+	if a:word_def =~ '^\s*$'
+
+		return
+	endif
+
 	" pattern for calls to that word
 	let l:word_call = MakeBoundedPattern(a:word_def)
 
@@ -124,7 +130,7 @@ func! Unforth(outfile) abort
 
 	" remove everything after 3 letters of each word
 	g;^\s*[^/];cal RemoveInline(MakeBoundedPattern('[A-Za-z\-!@?*]\{1,3\}\zs[A-Za-z\-!@?*]*'))
-	" g;VAL\|VAR;cal RemoveInline(MakeBoundedPattern('VAR\|VAL\s\+[0-9A-Za-z\-!@?*]\{1,3\}\zs[0-9A-Za-z\-!@?*]*'))
+	g;VAL\|VAR;cal RemoveInline(MakeBoundedPattern('VAR\|VAL\s\+[0-9A-Za-z\-!@?*]\{1,3\}\zs[0-9A-Za-z\-!@?*]*'))
 
 	" quote everything
 	g;^\s*[^/];normal! A" NL

@@ -84,7 +84,7 @@
 ;
 
 : F!			( m v iaddr -- )
-	DUP >R			( m v iaddr       ; saves a copy of indexed-addr for later ) 
+	DUP >R			( m v iaddr       ; saves a copy of indexed-addr for later )
 	16-bit-encode!		( m v iaddr       ; encodes value to specified DATA buffer index )
 	R>			( m   iaddr       ; restores indexed-addr from Rstack )
 	3 +			( m   iaddr +3    ; offsets the indexed address by 3 bytes )
@@ -149,6 +149,44 @@
 
 \ Screen-specific words
 
+\ LABELS:
+\  PORTAL   My
+\  ATLETAS
+\  REGIST.
+\  COMUNICANDO
+\  LEITOR
+\  LTE/4G:
+\  WIFI:
+\  IP:
+\  LOCAL:
+\  PROVA:
+\  PING:
+\  HORA:
+\  USB:
+\  AGUARDE...
+\  ERRO TENTAR,
+\    NOVAMENTE 15
+\
+\  RFID  -
+\  SERIE:
+\  SIST.     18
+\
+\  PRESSIONE,
+\  PARA CONFIRMAR 20
+\
+\  OFFLINE
+\  DATA:  22
+\
+\ VALUES:
+\  WEB
+\  CONECTAD
+\  DESLIGAD
+\  AUTOMATIC
+\  OK
+\  X
+\  A
+\  COLON
+
 : Antenna!   		( m1 v1 m2 v2 m3 v3 m4 v4 -- ; magnitude and value for each antenna )
 	0 aligned-data-Big!	( m1 v1 m2 v2 m3 v3 m4 v4 idx )
 	1 aligned-data-Big!	( m1 v1 m2 v2 m3 v3       idx )
@@ -157,13 +195,15 @@
 ;
 
 \ Examples:
-\       3 50 1 500 1 650 3 5 Antenna!
-\       ' antenna 1-CODE call!
+\	Antenna:
+\         3 50 1 500 1 650 3 5 Antenna!
+\         ' antenna 1-CODE call!
 
+\     Tags+Unicas
 \ 	$22 0 1 aligned-data-C!
-\ 	$01 1 1 aligned-data-C!
+\ 	$02 1 1 aligned-data-C!
 \ 	' Label 0 2-CODE call-idx! ' Number 1 2-CODE call-idx!
-\ 	
+\
 \ 	$22 2 1 aligned-data-C!
 \ 	$01 3 1 aligned-data-C!
 \ 	' Label 0 1-CODE call-idx! ' Number 1 1-CODE call-idx!
@@ -198,7 +238,7 @@ VARIABLE confirm-state
 	THEN
 ;
 
-\ ====================== 
+\ ======================
 
 \ Extern signatures in alphabetical order
 
@@ -213,6 +253,15 @@ VARIABLE confirm-state
 : adC* aligned-data-C!   ; ( I8       idx align          ; extern )
 : cid* call-idx!	 ; ( U16-addr idx U16-addr       ; extern )
 : Dis* Dis               ; (                             ; extern )
+
+' Label   VALUE Lbl* ( ; extern )
+' Forward VALUE Fwd* ( ; extern )
+' BigNum  VALUE Big* ( ; extern )
+' Number  VALUE Num* ( ; extern )
+' Value   VALUE Val* ( ; extern )
+' Ip      VALUE IP-* ( ; extern )
+' Ms      VALUE MS-* ( ; extern )
+' antenna VALUE atn* ( ; extern )
 
 \ ======================
 
