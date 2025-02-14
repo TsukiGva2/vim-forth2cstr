@@ -11,6 +11,7 @@ endf
 func! AbbrevPrimitives()
 
  	" substitution table
+	silent! %s/HERE/HRE/g
 	silent! %s/VALUE/VAL/g
 	silent! %s/NEXT/NXT/g
 	silent! %s/THEN/THN/g
@@ -123,6 +124,7 @@ func! Unforth(outfile) abort
 
 	" remove everything after 3 letters of each word
 	g;^\s*[^/];cal RemoveInline(MakeBoundedPattern('[A-Za-z\-!@?*]\{1,3\}\zs[A-Za-z\-!@?*]*'))
+	" g;VAL\|VAR;cal RemoveInline(MakeBoundedPattern('VAR\|VAL\s\+[0-9A-Za-z\-!@?*]\{1,3\}\zs[0-9A-Za-z\-!@?*]*'))
 
 	" quote everything
 	g;^\s*[^/];normal! A" NL

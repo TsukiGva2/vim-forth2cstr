@@ -28,8 +28,7 @@
 
 \ C-API Drawing instructions
 
-\ offset +0x00
-: Label    5   API ; ( 2 bytes each )
+: Label    5   API ;
 : Forward  2   API ;
 : BigNum   1   API ; ( ; biblically accurate dump of 65K in BigNumber format: 0xBF004103 )
 : Number   4   API ;
@@ -99,28 +98,23 @@
 	+			( offset addr    ; calculates base address + offset to get the indexed-address )
 ;
 
-: calc-align-data	( idx align -- iaddr ; calculates aligned offset of the specified index in the DATA buffer )
-	DATA			( idx align )
-	calc-align		( idx align data-addr )
-;
-
 \ ======================
 
 \ Aligned writes
 
 : aligned-data!		( value idx align -- ; n-byte aligned 16-bit write to DATA buffer )
-	calc-align-data		( value idx align )
+	DATA calc-align		( value idx align )
 	16-bit-encode!		( value iaddr     ; encodes value to specified DATA buffer index )
 ;
 
 : aligned-data-C!	( value idx align -- ; n-byte aligned 8-bit write to DATA buffer )
-	calc-align-data		( value idx align )
+	DATA calc-align		( value idx align )
 	C!			( value iaddr     ; encodes value to specified DATA buffer index )
 ;
 
 : aligned-data-Big!	( m v idx -- ; 4-byte aligned BigNumber write to DATA buffer, refer to the BigNumber type )
 	4			( value idx align ; this one has fixed alignment because 4 is the max size )
-	calc-align-data		( value idx align ; each BigNumber has a 3-byte encoded value + a single-byte magnitude )
+	DATA calc-align		( value idx align ; each BigNumber has a 3-byte encoded value + a single-byte magnitude )
 	F!			( value iaddr     ; writes a BigNumber to the specified DATA index )
 ;
 
@@ -145,7 +139,9 @@
 ;
 
 : call-idx!		( word-addr idx code-addr -- ; writes a call instruction to aligned offset )
-	2 calc-align		( word-addr idx align code-addr ; 2-byte call )
+	>R			( word-addr idx align code-addr ; storing code-addr )
+	2 R>			( word-addr idx align           ; retrieving code-addr, to reorder )
+	calc-align		( word-addr idx align code-addr ; 2-byte call )
 	call!			( word-addr indexed-addr )
 ;
 
@@ -160,21 +156,24 @@
 	3 aligned-data-Big!	( m1 v1                   idx )
 ;
 
-\ Example:
+\ Examples:
 \       3 50 1 500 1 650 3 5 Antenna!
 \       ' antenna 1-CODE call!
 
-\ $01 0 1 aligned-data-C!
-\ $01 1 1 aligned-data-C!
-\ 
-\ ' Label 0 1-CODE call-idx! ' Number 1 1-CODE call-idx!
-\ ' Label 0 2-CODE call-idx! ' Number 1 2-CODE call-idx!
+\ 	$22 0 1 aligned-data-C!
+\ 	$01 1 1 aligned-data-C!
+\ 	' Label 0 2-CODE call-idx! ' Number 1 2-CODE call-idx!
+\ 	
+\ 	$22 2 1 aligned-data-C!
+\ 	$01 3 1 aligned-data-C!
+\ 	' Label 0 1-CODE call-idx! ' Number 1 1-CODE call-idx!
 
 \ ======================
 
 \ User interaction-related words and state
 
 VARIABLE current-screen
+1 current-screen !
 
 VARIABLE arrow-state
 VARIABLE confirm-state
@@ -197,30 +196,27 @@ VARIABLE confirm-state
 		DUP		 ( current-screen'         )
 		current-screen ! ( current-screen' current-screen' )
 	THEN
-; 
- 
+;
+
 \ ====================== 
 
-\ Extern function signatures in alphabetical order
+\ Extern signatures in alphabetical order
+
+\            ___
+\ 1-CODE VALUE 1-C*	( ; extern )
+\ 2-CODE VALUE 2-C*	( ; extern )
+
 \ ___
 : Atn* Antenna!          ; ( I8 I16 I8 I16 I8 I16 I8 I16 ; extern )
 : ad!* aligned-data!     ; ( I16      idx align          ; extern )
 : adB* aligned-data-Big! ; ( I8 I16   idx                ; extern )
 : adC* aligned-data-C!   ; ( I8       idx align          ; extern )
+: cid* call-idx!	 ; ( U16-addr idx U16-addr       ; extern )
+: Dis* Dis               ; (                             ; extern )
 
 \ ======================
 
 \ Initialization
-
-\ 1 render-screen	( ; render the first screen )
-
-: stack-protect		( ; fills the stack )
-	30			( n-elems )
-	FOR
-		0		( random-value )
-	NEXT
-;
-stack-protect
 
 1500 DLY
 50 0 TMI Dis
