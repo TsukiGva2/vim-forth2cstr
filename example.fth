@@ -92,9 +92,16 @@
 	C!			( m   iaddr'      ; writes the single-byte magnitude right next to the encoded value )
 ;
 
-: calc-align		( idx align -- iaddr ; calculates aligned offset of the specified index in the DATA buffer )
-	*			( idx align   ; calculates ALIGN-byte *offset* )
-	DATA +			( offset data ; calculates base DATA address + offset to get the indexed-address )
+: calc-align		( idx align addr -- iaddr ; calculates aligned offset of the specified index )
+	>R			( idx align addr )
+	*			( idx align      ; calculates ALIGN-byte *offset* )
+	R>			( offset         )
+	+			( offset addr    ; calculates base address + offset to get the indexed-address )
+;
+
+: calc-align-data	( idx align -- iaddr ; calculates aligned offset of the specified index in the DATA buffer )
+	DATA			( idx align )
+	calc-align		( idx align data-addr )
 ;
 
 \ ======================
@@ -102,17 +109,18 @@
 \ Aligned writes
 
 : aligned-data!		( value idx align -- ; n-byte aligned 16-bit write to DATA buffer )
-	calc-align		( value idx align )
+	calc-align-data		( value idx align )
 	16-bit-encode!		( value iaddr     ; encodes value to specified DATA buffer index )
 ;
 
 : aligned-data-C!	( value idx align -- ; n-byte aligned 8-bit write to DATA buffer )
-	calc-align		( value idx align )
+	calc-align-data		( value idx align )
 	C!			( value iaddr     ; encodes value to specified DATA buffer index )
 ;
 
 : aligned-data-Big!	( m v idx -- ; 4-byte aligned BigNumber write to DATA buffer, refer to the BigNumber type )
-	4 calc-align		( value idx align ; each BigNumber has a 3-byte encoded value + a single-byte magnitude )
+	4			( value idx align ; this one has fixed alignment because 4 is the max size )
+	calc-align-data		( value idx align ; each BigNumber has a 3-byte encoded value + a single-byte magnitude )
 	F!			( value iaddr     ; writes a BigNumber to the specified DATA index )
 ;
 
@@ -136,6 +144,11 @@
 	!			( call-instruction target-addr ; writes the created call instruction, modifying target-addr )
 ;
 
+: call-idx!		( word-addr idx code-addr -- ; writes a call instruction to aligned offset )
+	2 calc-align		( word-addr idx align code-addr ; 2-byte call )
+	call!			( word-addr indexed-addr )
+;
+
 \ ======================
 
 \ Screen-specific words
@@ -152,7 +165,10 @@
 \       ' antenna 1-CODE call!
 
 \ $01 0 1 aligned-data-C!
-\ ' Label 1-CODE call!
+\ $01 1 1 aligned-data-C!
+\ 
+\ ' Label 0 1-CODE call-idx! ' Number 1 1-CODE call-idx!
+\ ' Label 0 2-CODE call-idx! ' Number 1 2-CODE call-idx!
 
 \ ======================
 
