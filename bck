@@ -49,17 +49,17 @@
 \ The screen
 
 : Dis			( -- ; Screen buffer )
-	NOP NOP NOP NOP
-	NOP NOP NOP NOP
-	NOP NOP NOP NOP
-	NOP NOP NOP NOP
+	#_4			( ; DATA buffer )
+	#_4			( ; 16-byte chunk, able to store 4 BigNumbers )
+	#_4
+	#_4
 
 	0       Label		( label-id ; Main label, shows device name )
 	VERSION Number		( device-version )
 	Forward
 
-	TAG NOP NOP NOP Forward ( COMPILE TIME: tagged-addr )
-	TAG NOP NOP NOP Forward ( COMPILE TIME: tagged-addr tagged-addr-2 )
+	#4 Forward		( ; [SCR_CODE1], allocated space for 2 calls, which is enough. )
+	#4 Forward		( ; [SCR_CODE2] )
 
 	3       Label NOP	( label-id ; Main label #2, shows device connectivity )
 	0       Value		( value-id )
@@ -68,10 +68,9 @@
 	0 API			( 0 ; C-Api call #0: Draw screen )
 ;
 
-VALUE 2-CODE     ( tagged-addr tagged-addr-2 ; Address of the second screen code buffer )
-VALUE 1-CODE     ( tagged-addr ; Address of the first screen code buffer )
-
-' Dis VALUE DATA ( ; Address of beginning of screen data buffer )
+' Dis VALUE DATA	( ; Address of beginning of screen data buffer )
+  R>  VALUE 2-CODE	( ; Address of the second screen code buffer )
+  R>  VALUE 1-CODE	( ; Address of the first screen code buffer )
 
 \ ======================
 

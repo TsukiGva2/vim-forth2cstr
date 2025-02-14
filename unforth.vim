@@ -29,6 +29,7 @@ func! MakeBoundedPattern(pat)
 	return '\(^\|\s\)\zs' . a:pat . '\ze\(\s\|$\)'
 endf
 
+let g:word_id = 0
 let g:varnames_used = ""
 
 func! Mangle(word_def, prefix)
@@ -44,7 +45,7 @@ func! Mangle(word_def, prefix)
 	let l:word_call = MakeBoundedPattern(a:word_def)
 
 	" new name
-	let l:generated_name = a:prefix . (rand() % 100)
+	let l:generated_name = a:prefix . g:word_id
 
 	while g:varnames_used =~ l:generated_name
 		echo "Detected duplicate name, randomizing"
@@ -52,10 +53,12 @@ func! Mangle(word_def, prefix)
 		let l:generated_name = a:prefix . (rand() % 100)
 	endw
 
+	let g:word_id = g:word_id + 1
+
 	let g:varnames_used = g:varnames_used . l:generated_name . ';'
 
-	exe '%sub/'   . l:word_call . '/' . l:generated_name . '/g'
-	exe 'normal!' . 'ggO//'           . l:generated_name . '	->	' . a:word_def
+	exe '%sub/' . l:word_call . '/' . l:generated_name . '/g'
+	exe 'normal!' . 'ggo// @"' . line('.') . '/' . l:generated_name . '	->	' . a:word_def
 endf
 
 func! MangleWord() " this function must be called only on lines with a forth word definition
@@ -83,7 +86,10 @@ func! Unforth(outfile) abort
 	" save to new file
 	execute 'saveas!' a:outfile
 
-	set ft=none
+	setlocal ft=none
+
+	" create an empty line at the start
+	normal! ggo
 
 	" My shorthands:
 
@@ -151,9 +157,10 @@ func! Unforth(outfile) abort
 	normal! G0o;
 	normal! G0o#endif
 
-	set ft=c
+	setlocal ft=c
 	w
 endf
 
+setlocal noswapfile
 command! -nargs=1 Unforth cal Unforth(<q-args>)
 
