@@ -160,6 +160,9 @@
 
 VARIABLE current-screen
 
+VARIABLE arrow-state
+VARIABLE confirm-state
+
 6 VALUE arrow-pin
 7 VALUE confirm-pin
 
@@ -173,9 +176,10 @@ VARIABLE current-screen
 
 : next-screen
 	IF
-		current-screen @
-		1 + 7 MOD
-		current-screen !
+		current-screen @ ( ; fetch current screen )
+		1 + 7 MOD	 ( current-screen +1 mod-7 )
+		DUP		 ( current-screen'         )
+		current-screen ! ( current-screen' current-screen' )
 	THEN
 ; 
  
@@ -192,7 +196,17 @@ VARIABLE current-screen
 
 \ Initialization
 
-500 DLY
+\ 1 render-screen	( ; render the first screen )
+
+: stack-protect		( ; fills the stack )
+	30			( n-elems )
+	FOR
+		0		( random-value )
+	NEXT
+;
+stack-protect
+
+1500 DLY
 50 0 TMI Dis
 1 TME
 
