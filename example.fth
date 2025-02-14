@@ -149,44 +149,6 @@
 
 \ Screen-specific words
 
-\ LABELS:
-\  PORTAL   My
-\  ATLETAS
-\  REGIST.
-\  COMUNICANDO
-\  LEITOR
-\  LTE/4G:
-\  WIFI:
-\  IP:
-\  LOCAL:
-\  PROVA:
-\  PING:
-\  HORA:
-\  USB:
-\  AGUARDE...
-\  ERRO TENTAR,
-\    NOVAMENTE 15
-\
-\  RFID  -
-\  SERIE:
-\  SIST.     18
-\
-\  PRESSIONE,
-\  PARA CONFIRMAR 20
-\
-\  OFFLINE
-\  DATA:  22
-\
-\ VALUES:
-\  WEB
-\  CONECTAD
-\  DESLIGAD
-\  AUTOMATIC
-\  OK
-\  X
-\  A
-\  COLON
-
 : Antenna!   		( m1 v1 m2 v2 m3 v3 m4 v4 -- ; magnitude and value for each antenna )
 	0 aligned-data-Big!	( m1 v1 m2 v2 m3 v3 m4 v4 idx )
 	1 aligned-data-Big!	( m1 v1 m2 v2 m3 v3       idx )
@@ -194,19 +156,65 @@
 	3 aligned-data-Big!	( m1 v1                   idx )
 ;
 
+\ LABELS:
+\ 0   PORTAL   My
+\ 1   ATLETAS
+\ 2   REGIST.
+\ 3   COMUNICANDO
+\ 4   LEITOR
+\ 5   LTE/4G:
+\ 6   WIFI:
+\ 7   IP:
+\ 8   LOCAL:
+\ 9   PROVA:
+\ 10  PING:
+\ 11  HORA:
+\ 12  USB:
+\ 13  AGUARDE...
+\ 14  ERRO TENTAR,
+\ 15    NOVAMENTE
+\
+\ 16  RFID  -
+\ 17  SERIE:
+\ 18  SIST.
+\
+\ 19  PRESSIONE,
+\ 20  PARA CONFIRMAR
+\
+\ 21  OFFLINE
+\ 22  DATA:
+\
+\ VALUES:
+\ 0   WEB
+\ 1   CONECTAD
+\ 2   DESLIGAD
+\ 3   AUTOMATIC
+\ 4   OK
+\ 5   X
+\ 6   A
+\ 7   COLON
+
 \ Examples:
 \	Antenna:
+
 \         3 50 1 500 1 650 3 5 Antenna!
 \         ' antenna 1-CODE call!
 
-\     Tags+Unicas
-\ 	$22 0 1 aligned-data-C!
-\ 	$02 1 1 aligned-data-C!
-\ 	' Label 0 2-CODE call-idx! ' Number 1 2-CODE call-idx!
+\	Tags+Unicas:
+
+\ 	  $22 12 1 aligned-data-C!
+\ 	  $02 13 1 aligned-data-C!
+\ 	  ' Label 0 2-CODE call-idx! ' Number 1 2-CODE call-idx!
 \
-\ 	$22 2 1 aligned-data-C!
-\ 	$01 3 1 aligned-data-C!
-\ 	' Label 0 1-CODE call-idx! ' Number 1 1-CODE call-idx!
+\ 	  $22 14 1 aligned-data-C!
+\ 	  $01 15 1 aligned-data-C!
+\ 	  ' Label 0 1-CODE call-idx! ' Number 1 1-CODE call-idx!
+
+\	Or in shorthand form:
+
+\	  $22 14 1 alC
+\	  $01 15 1 alC
+\	  Lbl 0 1-C ci! Num 1 1-C ci!
 
 \ ======================
 
@@ -230,11 +238,41 @@ VARIABLE confirm-state
 ;
 
 : next-screen
-	IF
-		current-screen @ ( ; fetch current screen )
-		1 + 7 MOD	 ( current-screen +1 mod-7 )
-		DUP		 ( current-screen'         )
-		current-screen ! ( current-screen' current-screen' )
+	current-screen @ ( ; fetch current screen )
+	1 + 7 MOD	 ( current-screen +1 mod-7 )
+	DUP		 ( current-screen'         )
+	current-screen ! ( current-screen' current-screen' )
+;
+
+\ NOTE: both DUP >R and *Addr* DUP @ >R have no practical effect on the main stack, chill.
+
+: update-state		( button-state-addr button-pressed? -- old-state new-state )
+	DUP   >R		(           ; tempsaves the value )                            (           ; )
+	DUP @ >R !		( new-state ; tempsaves the old value and stores the new one ) ( new-state ; )
+
+	R>			( ; ) ( new-state old-state ; )
+	R>			( ; ) ( new-state           ; )
+;
+
+: update-arrow-state
+	arrow-state arrow-pressed? update-state
+;
+
+: clicked?	( old-state pressed? -- clicked? ; checks if the button has just been clicked )
+	SWAP		( old-state pressed? -- pressed? old-state )
+	NOT		( pressed? old-state -- pressed? ~old-state )
+	AND		( pressed? ~old-state )
+;
+
+: do-button		( -- )
+	update-arrow-state
+	clicked? IF
+		next-screen
+	THEN
+
+	update-confirm-state
+	clicked? IF
+		-1 action !
 	THEN
 ;
 
@@ -251,7 +289,7 @@ VARIABLE confirm-state
 : ad!* aligned-data!     ; ( I16      idx align          ; extern )
 : adB* aligned-data-Big! ; ( I8 I16   idx                ; extern )
 : adC* aligned-data-C!   ; ( I8       idx align          ; extern )
-: cid* call-idx!	 ; ( U16-addr idx U16-addr       ; extern )
+: ci!* call-idx!	 ; ( U16-addr idx U16-addr       ; extern )
 : Dis* Dis               ; (                             ; extern )
 
 ' Label   VALUE Lbl* ( ; extern )
@@ -269,6 +307,7 @@ VARIABLE confirm-state
 
 1500 DLY
 50 0 TMI Dis
+10 1 TMI do-button
 1 TME
 
 \ ======================
